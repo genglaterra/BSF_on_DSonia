@@ -1,0 +1,1044 @@
+---
+title: "BSF Chitosan vs Chemical Treatments on Dendrobium Sonia Orchids"
+author: "Graham B. Englaterra"
+date: "2023-06-12"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(pwr)
+```
+
+## Chitosan % yeild from BSF
+```{r}
+data1 <- readxl::read_xlsx("BSF_chitosanYield.xlsx")
+
+# Test for notmaliyty
+# a. Histogram
+# for Chitin content
+par(mfrow=c(1,2))
+hist(data1$Chitin_content, col='steelblue', main='Chitin Content')
+
+# for chitosan content
+par(mfrow=c(1,2))
+hist(data1$Chitosan_content, col='steelblue', main='Chitosan Content')
+
+# b. Shapiro-Wilk normality test
+shapiro.test(data1$Chitin_content)
+  # pvalue = 0.6273 > 0.05 (normally distributed)
+shapiro.test(data1$Chitosan_content)
+  # pvalue = 0.0.6211 > 0.05 (normally distributed)
+
+# Mean, Median, Mode, Quantiles
+summary(data1[7:8])
+
+# Standard Dev
+sapply(data1[7:8], sd)
+
+#Chitin content Confidence interval
+sample.mean <- mean(data1$Chitin_content)
+
+sample.n <- length(data1$Chitin_content)
+sample.sd <- sd(data1$Chitin_content)
+sample.se <- sample.sd/sqrt(sample.n)
+
+alpha = 0.05
+degrees.freedom = sample.n - 1
+t.score = qt(p=alpha/2, df=degrees.freedom,lower.tail=F)
+
+margin.error <- t.score * sample.se
+lower.bound <- sample.mean - margin.error
+upper.bound <- sample.mean + margin.error
+print(c(lower.bound,upper.bound))
+
+## Chitosan content confident interval
+sample.mean1 <- mean(data1$Chitosan_content)
+
+sample.n1 <- length(data1$Chitosan_content)
+sample.sd1 <- sd(data1$Chitosan_content)
+sample.se1 <- sample.sd1/sqrt(sample.n1)
+
+alpha1 = 0.05
+degrees.freedom1 = sample.n1 - 1
+t.score1 = qt(p=alpha/2, df=degrees.freedom,lower.tail=F)
+
+
+margin.error1 <- t.score1 * sample.se1
+lower.bound1 <- sample.mean1 - margin.error1
+upper.bound1 <- sample.mean1 + margin.error1
+print(c(lower.bound1,upper.bound1))
+
+# correlation test between number of repetitions of deproteination stage and chitin content
+# a. normality test of 'Freq of Deprot' variable
+shapiro.test(data1$`Freq _of_Deprot`)
+      # p-value = 0.5487 > 0.05 (normally distributed)
+# b. Pearson Correlation test
+cor.test(data1$`Freq _of_Deprot`, data1$Chitin_content, method = 'pearson')
+
+#calculate the statistical power of the analysis
+pwr.r.test(n = 5, r = -0.4097013, sig.level = 0.05, power = )
+  # statistical power of this analysis is only 0.1105
+
+# correlation test between number of repetitions of deacetylation stage and chitosan yield
+# a. normality test of 'Freq Deacetyl' variable
+shapiro.test(data1$`Freq_Deacetyl`)
+      # p-value = 0.2538 > 0.05 (normally distributed)
+# b. Pearson Correlation test
+cor.test(data1$`Freq_Deacetyl`, data1$Chitosan_content, method = 'pearson')
+#calculate the statistical power of the analysis
+pwr.r.test(n = 5, r = -0.1613644, sig.level = 0.05, power = )
+  # statistical power of this analysis is only 0.06093
+```
+
+## Sample Calculation of Chitin and chitosan content 
+
+Chitin_content = (extracted chitin/total weight of BSF cocoon sample)*100
+               = (1.2026/10.0118)*100
+               = 12.01183
+chitosan_content = (extracted chitosan/total weight of BSF cocoon sample)*100
+                 = (0.4795/10.0118)*100
+                 =4.789349
+
+
+## Effect on leaf traits
+# Effect on ave. leaf number
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggforce)
+
+new.leaf.number <- readxl::read_xlsx("Leaf1.xlsx")
+
+# Creating a graph showing the difference in no. of new leaf between treatments
+jpeg("leaf1.jpg")
+ggplot(new.leaf.number, aes(x=Treatment_group, y=No._new_leaves)) + 
+  geom_sina(color= '#A4A4A4', size = 4) + 
+        stat_summary(fun.data=mean_sdl, fun.args = list(mult=1), geom="errorbar", 
+                     color="black", width=0.7) + 
+                          stat_summary(fun.y=mean, geom="point", color="black") + 
+                                 ggtitle("No. of Leaves Orchids in each Treatment Group Grew") + 
+                                  labs(y= "No. of New Leaves", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15), 
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+#Test of Normality for no. of new leaves produced per treatment
+library(ggpubr)
+library(car)
+library(multcomp)
+library(FSA)
+#Descriptive Statistics of different treatments
+  # 0 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T0")$No._new_leaves)
+  # 2 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T1")$No._new_leaves)
+  # 4 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T2")$No._new_leaves)
+  # 8 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T3")$No._new_leaves)
+  # 16 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T4")$No._new_leaves)
+  # 32 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T5")$No._new_leaves)
+lower.bound.T5.new.leaf<- mean(filter(new.leaf.number, 
+                                      new.leaf.number$Treatment_group == "T5")$No._new_leaves) - sd(filter(new.leaf.number, new.leaf.number$Treatment_group == "T5")$No._new_leaves)
+upper.bound.T5.new.leaf<- mean(filter(new.leaf.number, 
+                                      new.leaf.number$Treatment_group == "T5")$No._new_leaves) + sd(filter(new.leaf.number, new.leaf.number$Treatment_group == "T5")$No._new_leaves)
+print(c(upper.bound.T5.new.leaf, lower.bound.T5.new.leaf))
+  # 64 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T6")$No._new_leaves)
+  # 128 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T7")$No._new_leaves)
+  #  chemical treatment
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T8")$No._new_leaves)
+mean(filter(new.leaf.number, new.leaf.number$Treatment_group == "T8")$No._new_leaves)
+sd(filter(new.leaf.number, new.leaf.number$Treatment_group == "T8")$No._new_leaves)
+
+# normality test 
+# 0 ppm
+summary (filter(new.leaf.number, new.leaf.number$Treatment_group == "T0")$No._new_leaves)
+shapiro.test(filter(new.leaf.number, new.leaf.number$Treatment_group == "T0")$No._new_leaves)
+  # p-value < 2.2e-16 < 0.05 --> not normal
+# normality test of T1
+shapiro.test(filter(new.leaf.number, new.leaf.number$Treatment_group == "T1")$No._new_leaves)
+  # p-value = 6.802e-15 < 0.05 --> not normal
+# normality test of T2
+shapiro.test(filter(new.leaf.number, new.leaf.number$Treatment_group == "T2")$No._new_leaves)
+  # p-value = 1.33e-14 < 0.05 --> not normal
+# normality test of T3
+shapiro.test(filter(new.leaf.number, new.leaf.number$Treatment_group == "T3")$No._new_leaves)
+  # p-value = 7.112e-12 < 0.05 --> not normal
+# Hence, data not normal.
+
+# Heteroscedasticity test
+leveneTest(new.leaf.number$No._new_leaves ~ new.leaf.number$Treatment_group, new.leaf.number)
+  # p-value = 0.0002019 < 0.05 --> Heteroscedastic
+
+# Not normally distributed and Heteroscedastic : Proceed with Welch's ANOVA
+oneway.test(new.leaf.number$No._new_leaves ~ new.leaf.number$Treatment_group, var.equal = FALSE)
+  # p-value = 4.36e-05 < 0.05 -> No of new leaves per treatment group is significantly different from each other. Proceed with Post-hoc test: Wilcoxon rank sum test
+
+pairwise.wilcox.test(new.leaf.number$No._new_leaves, new.leaf.number$Treatment_group)
+  # only T5 is significantly higher than T8.
+
+#power analysis
+  # effect size used is from the performed Welch's ANOVA
+pwr.anova.test(9, 60, 0.14, 0.05, power=)
+  # power is 0.6100
+```
+# Effect on Leaf Mortality
+```{r}
+leaf.number.died <- readxl::read_xlsx("Leaf2.xlsx")
+leaf.number.died
+
+# Creating a graph showing the difference in no. of leaves lost in a span of a month between treatments
+jpeg("leaf2.jpg")
+ggplot(leaf.number.died, aes(x=Treatment_group, y=Died)) + 
+  geom_sina(color = '#A4A4A4', size = 4) + 
+        stat_summary(fun.data=mean_sdl, fun.args = list(mult=1), geom="errorbar", width=0.7, 
+                     color = "black") +
+                          stat_summary(fun.y=mean, geom="point", color = "black") + 
+                                 ggtitle("No. of Leaves Lost in Orchids in each Treatment Group") + 
+                                  labs(y= "No. of Leaves Lost", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+# normality test 
+# 0 ppm
+shapiro.test(filter(leaf.number.died, leaf.number.died$Treatment_group == "T0")$Died)
+  # p-value < 2.2e-16 < 0.05 --> not normal
+# normality test of T1
+shapiro.test(filter(leaf.number.died, leaf.number.died$Treatment_group == "T1")$Died)
+  # p-value = 4.505e-15 < 0.05 --> not normal
+# normality test of T2
+shapiro.test(filter(leaf.number.died, leaf.number.died$Treatment_group == "T2")$Died)
+  # p-value = 2.468e-13 < 0.05 --> not normal
+# normality test of T3
+shapiro.test(filter(leaf.number.died, leaf.number.died$Treatment_group == "T3")$Died)
+  # p-value = 4.554e-14 < 0.05 --> not normal
+# Hence, data not normal.
+
+# Heteroscedasticity test
+leveneTest(leaf.number.died$Died ~ leaf.number.died$Treatment_group, leaf.number.died)
+  # p-value = 0.485 > 0.05 --> Homoscedastic
+
+# Not normally distributed and Homoscedastic : Proceed with Kruskal-Wallis test
+kruskal.test(leaf.number.died$Died ~ leaf.number.died$Treatment_group, leaf.number.died)
+  # p-value = 0.2323 > 0.05 -> No. of leaves lost per treatment group is not significantly different from each other. 
+
+#power analysis
+  # effect size used is from the performed kruskall.test
+  # determination of effect size is via effectsize () of the package 'effectsize'
+pwr.anova.test(9, 60, 0.02, 0.05, power=)
+  # power is 0.05708
+```
+# Effect on No. of Orchids having leaf disease
+```{r}
+leaf.disease <- readxl::read_xlsx("DSonia_LeafDisease1.xlsx")
+leaf.disease <- leaf.disease[, -1]
+leaf.disease <- data.frame(leaf.disease)
+rownames(leaf.disease) <- c("T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8")
+leaf.disease
+
+# Visualizing the data via balloonplot()
+library("gplots")
+
+jpeg("leaf3.jpg")
+  # converting data.frame "leaf.disease" to table
+      tab.chisq.test <- as.table(as.matrix(leaf.disease))
+      balloonplot(t(tab.chisq.test), main = "Effect of Different Treatements on Presence of Leaf Disease",
+                 xlab = "Leaf Diseases", ylab = "Treatments", label = FALSE, show.margins = FALSE , 
+                 dotcolor = '#A4A4A4')
+dev.off()
+
+# Effect of Treatments on No. Orchids having Leaf diseases 
+ # Is the number of orchids that have leaf disease per treatment equal?
+    # Perform chi square test. Null: each treatment has equal number of orchids with leaf disease
+      chisq.test(leaf.disease)
+            # p value = 7.323e-07 < 0.05 ->  each treatment don't have equal number of orchids that have                  #leaf disease. Each treatment groups have significantly different number of orchids having                 # leaf disease.
+      #power analysis of the test done. 365 samples were observed having disease.
+      pwr.chisq.test(.16, 365, 32, 0.05, power = )
+          # power is 0.2939
+```
+
+
+## Effect of different Treatments on D. Sonia Plant height 
+```{r}
+# Cleaning data
+height <- readxl::read_xlsx("DSonia_Plant_Height.xlsx")
+height <- na.omit(height)
+colnames(height) <- c("Treatment_group", "delta_height") 
+
+T0 <- height[grep("T0", height$Treatment_group),]
+T0 <- T0[2]
+T0_rownames <- character()
+for (i in 1:69){
+  out <- "T0"
+  T0_rownames <- c(T0_rownames, out)
+} 
+T0 <- cbind(T0_rownames, T0)
+colnames(T0) <- c("Treatment_group", "delta_height")
+
+T1 <- height[grep("T1", height$Treatment_group),]
+T1 <- T1[2]
+T1_rownames <- character()
+for (i in 1:63){
+  out <- "T1"
+  T1_rownames <- c(T1_rownames, out)
+} 
+T1 <- cbind(T1_rownames, T1)
+colnames(T1) <- c("Treatment_group", "delta_height")
+
+
+T2 <- height[grep("T2", height$Treatment_group),]
+T2 <- T2[2]
+T2_rownames <- character()
+for (i in 1:56){
+  out <- "T2"
+  T2_rownames <- c(T2_rownames, out)
+} 
+T2 <- cbind(T2_rownames, T2)
+colnames(T2) <- c("Treatment_group", "delta_height")
+
+
+T3 <- height[grep("T3", height$Treatment_group),]
+T3 <- T3[2]
+T3_rownames <- character()
+for (i in 1:53){
+  out <- "T3"
+  T3_rownames <- c(T3_rownames, out)
+} 
+T3 <- cbind(T3_rownames, T3)
+colnames(T3) <- c("Treatment_group", "delta_height")
+
+T4 <- height[grep("T4", height$Treatment_group),]
+T4 <- T4[2]
+T4_rownames <- character()
+for (i in 1:60){
+  out <- "T4"
+  T4_rownames <- c(T4_rownames, out)
+} 
+T4 <- cbind(T4_rownames, T4)
+colnames(T4) <- c("Treatment_group", "delta_height")
+
+
+T5 <- height[grep("T5", height$Treatment_group),]
+T5 <- T5[2]
+T5_rownames <- character()
+for (i in 1:64){
+  out <- "T5"
+  T5_rownames <- c(T5_rownames, out)
+} 
+T5 <- cbind(T5_rownames, T5)
+colnames(T5) <- c("Treatment_group", "delta_height")
+
+
+T6 <- height[grep("T6", height$Treatment_group),]
+T6 <- T6[2]
+T6_rownames <- character()
+for (i in 1:68){
+  out <- "T6"
+  T6_rownames <- c(T6_rownames, out)
+} 
+T6 <- cbind(T6_rownames, T6)
+colnames(T6) <- c("Treatment_group", "delta_height")
+
+
+T7 <- height[grep("T7", height$Treatment_group),]
+T7 <- T7[2]
+T7_rownames <- character()
+for (i in 1:64){
+  out <- "T7"
+  T7_rownames <- c(T7_rownames, out)
+} 
+T7 <- cbind(T7_rownames, T7)
+colnames(T7) <- c("Treatment_group", "delta_height")
+
+T8 <- height[grep("T8", height$Treatment_group),]
+T8 <- T8[2]
+T8_rownames <- character()
+for (i in 1:52){
+  out <- "T8"
+  T8_rownames <- c(T8_rownames, out)
+} 
+T8 <- cbind(T8_rownames, T8)
+colnames(T8) <- c("Treatment_group", "delta_height")
+
+height_df <- rbind(T0, T1, T2, T3, T4, T5, T6, T7, T8)
+height_df
+
+# Visualizing data
+jpeg("height.jpg")
+ggplot(height_df, aes(x=Treatment_group, y= delta_height)) + 
+  geom_boxplot(fill = '#A4A4A4', color = "black") +
+  stat_summary(fun.y=mean, geom="point", color = "black") + 
+                                 ggtitle("Change in Plant Height of Orchids in each Treatment Group") + 
+                                  labs(y= "Height (m)", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=14.2),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+# Summary of descriptive stat of data
+  #T0
+summary(height_df[grep("T0", height_df$Treatment_group), 2])
+sd(height_df[grep("T0", height$Treatment_group), 2])
+#T1
+summary(height_df[grep("T1", height_df$Treatment_group), 2])
+sd(height_df[grep("T1", height$Treatment_group), 2])
+#T2
+summary(height_df[grep("T2", height_df$Treatment_group), 2])
+sd(height_df[grep("T2", height$Treatment_group), 2])
+#T3
+summary(height_df[grep("T3", height_df$Treatment_group), 2])
+sd(height_df[grep("T3", height$Treatment_group), 2])
+#T4
+summary(height_df[grep("T4", height$Treatment_group), 2])
+sd(height_df[grep("T4", height$Treatment_group), 2])
+#T5
+summary(height_df[grep("T5", height_df$Treatment_group), 2])
+sd(height_df[grep("T5", height$Treatment_group), 2])
+#T6
+summary(height_df[grep("T6", height_df$Treatment_group), 2])
+sd(height_df[grep("T6", height$Treatment_group), 2])
+#T7
+summary(height_df[grep("T7", height_df$Treatment_group), 2])
+sd(height_df[grep("T7", height$Treatment_group), 2])
+#T8
+summary(height_df[grep("T8", height_df$Treatment_group), 2])
+sd(height_df[grep("T8", height$Treatment_group), 2])
+
+# Statistical Analysis
+
+# test for normality
+# T0
+shapiro.test(filter(height_df, height_df$Treatment_group == "T0")$delta_height)
+  # p-value p-value = 0.2831 > 0.05 --> normally distributed
+# normality test of T1
+shapiro.test(filter(height_df, height_df$Treatment_group == "T1")$delta_height)
+  # p-value = 0.7703 > 0.05 --> normally distributed
+# normality test of T2
+shapiro.test(filter(height_df, height_df$Treatment_group == "T2")$delta_height)
+  # p-value = 0.03621 < 0.05 --> not normally distributed
+# normality test of T3
+shapiro.test(filter(height_df, height_df$Treatment_group == "T3")$delta_height)
+  # p-value = 0.575 > 0.05 --> not normally distributed
+# Hence, data not normally distributed.
+
+# # Heteroscedasticity test
+leveneTest(height_df$delta_height ~ height_df$Treatment_group, height_df)
+  # p-value = 0.01301 < 0.05 --> Heteroscedastic
+
+# Not normally distributed and Heteroscedastic : Proceed with Welch's ANOVA
+oneway.test(height_df$delta_height ~ height_df$Treatment_group, var.equal = FALSE)
+  # p-value = 0.003056 < 0.05 -> Orchid height per treatment group is significantly different from each other. Proceed with Post-hoc test: Wilcoxon rank sum test
+
+pairwise.wilcox.test(height_df$delta_height, height_df$Treatment_group)
+  # only T2 is significantly higher than T0.
+
+# power analysis
+pwr.anova.test(9, 61, 0.10, 0.05, power= )
+  # power = 0.3212
+```
+## Effect of different Treatments on D. Sonia Plant root-shoot ratio 
+```{r}
+# Cleaning data
+rs.ratio <- readxl::read_xlsx("DSonia_RootShootRatio.xlsx")
+rs.ratio <- na.omit(rs.ratio)
+rs.ratio <- rs.ratio[c(1, 4)]
+colnames(rs.ratio) <- c("Treatment_group", "Ratio") 
+
+T0 <- rs.ratio[grep("t0", rs.ratio$Treatment_group),]
+T0 <- T0[2]
+T0_rownames <- character()
+for (i in 1:9){
+  out <- "T0"
+  T0_rownames <- c(T0_rownames, out)
+} 
+T0 <- cbind(T0_rownames, T0)
+colnames(T0) <- c("Treatment_group", "Ratio")
+
+T1 <- rs.ratio[grep("t1", rs.ratio$Treatment_group),]
+T1 <- T1[2]
+T1_rownames <- character()
+for (i in 1:9){
+  out <- "T1"
+  T1_rownames <- c(T1_rownames, out)
+} 
+T1 <- cbind(T1_rownames, T1)
+colnames(T1) <- c("Treatment_group", "Ratio")
+
+
+T2 <- rs.ratio[grep("t2", rs.ratio$Treatment_group),]
+T2 <- T2[2]
+T2_rownames <- character()
+for (i in 1:10){
+  out <- "T2"
+  T2_rownames <- c(T2_rownames, out)
+} 
+T2 <- cbind(T2_rownames, T2)
+colnames(T2) <- c("Treatment_group", "Ratio")
+
+
+T3 <- rs.ratio[grep("t3", rs.ratio$Treatment_group),]
+T3 <- T3[2]
+T3_rownames <- character()
+for (i in 1:9){
+  out <- "T3"
+  T3_rownames <- c(T3_rownames, out)
+} 
+T3 <- cbind(T3_rownames, T3)
+colnames(T3) <- c("Treatment_group", "Ratio")
+
+T4 <- rs.ratio[grep("t4", rs.ratio$Treatment_group),]
+T4 <- T4[2]
+T4_rownames <- character()
+for (i in 1:10){
+  out <- "T4"
+  T4_rownames <- c(T4_rownames, out)
+} 
+T4 <- cbind(T4_rownames, T4)
+colnames(T4) <- c("Treatment_group", "Ratio")
+
+
+T5 <- rs.ratio[grep("t5", rs.ratio$Treatment_group),]
+T5 <- T5[2]
+T5_rownames <- character()
+for (i in 1:10){
+  out <- "T5"
+  T5_rownames <- c(T5_rownames, out)
+} 
+T5 <- cbind(T5_rownames, T5)
+colnames(T5) <- c("Treatment_group", "Ratio")
+
+
+T6 <- rs.ratio[grep("t6", rs.ratio$Treatment_group),]
+T6 <- T6[2]
+T6_rownames <- character()
+for (i in 1:8){
+  out <- "T6"
+  T6_rownames <- c(T6_rownames, out)
+} 
+T6 <- cbind(T6_rownames, T6)
+colnames(T6) <- c("Treatment_group", "Ratio")
+
+
+T7 <- rs.ratio[grep("t7", rs.ratio$Treatment_group),]
+T7 <- T7[2]
+T7_rownames <- character()
+for (i in 1:10){
+  out <- "T7"
+  T7_rownames <- c(T7_rownames, out)
+} 
+T7 <- cbind(T7_rownames, T7)
+colnames(T7) <- c("Treatment_group", "Ratio")
+
+T8 <- rs.ratio[grep("t8", rs.ratio$Treatment_group),]
+T8 <- T8[2]
+T8_rownames <- character()
+for (i in 1:8){
+  out <- "T8"
+  T8_rownames <- c(T8_rownames, out)
+} 
+T8 <- cbind(T8_rownames, T8)
+colnames(T8) <- c("Treatment_group", "Ratio")
+
+rs.ratio.df <- rbind(T0, T1, T2, T3, T4, T5, T6, T7, T8)
+rs.ratio.df
+
+# Visualizing data
+jpeg("rs_ratio.jpg")
+ggplot(rs.ratio.df, aes(x=Treatment_group, y= Ratio)) + 
+  geom_boxplot(fill = '#A4A4A4', color = "black") +
+  stat_summary(fun.y=mean, geom="point", color = "red") + 
+                                 ggtitle("Root-Shoot Ratio of Orchids in each Treatment Group") + 
+                                  labs(y= "Ratio", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+# Summary of descriptive stat of data
+  #T0
+summary(rs.ratio.df[grep("T0", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T0", rs.ratio.df$Treatment_group), 2])
+#T1
+summary(rs.ratio.df[grep("T1", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T1", rs.ratio.df$Treatment_group), 2])
+#T2
+summary(rs.ratio.df[grep("T2", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T2", rs.ratio.df$Treatment_group), 2])
+#T3
+summary(rs.ratio.df[grep("T3", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T3", rs.ratio.df$Treatment_group), 2])
+#T4
+summary(rs.ratio.df[grep("T4", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T4", rs.ratio.df$Treatment_group), 2])
+#T5
+summary(rs.ratio.df[grep("T5", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T5", rs.ratio.df$Treatment_group), 2])
+#T6
+summary(rs.ratio.df[grep("T6", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T6", rs.ratio.df$Treatment_group), 2])
+#T7
+summary(rs.ratio.df[grep("T7", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T7", rs.ratio.df$Treatment_group), 2])
+#T8
+summary(rs.ratio.df[grep("T8", rs.ratio.df$Treatment_group), 2])
+sd(rs.ratio.df[grep("T8", rs.ratio.df$Treatment_group), 2])
+
+# Statistical Analysis
+
+# test for normality
+# T0
+shapiro.test(filter(rs.ratio.df, rs.ratio.df$Treatment_group == "T0")$Ratio)
+  # p-value p-value = 0.09777 > 0.05 --> normally distributed
+# normality test of T1
+shapiro.test(filter(rs.ratio.df, rs.ratio.df$Treatment_group == "T1")$Ratio)
+  # p-value = 0.7412 > 0.05 --> normally distributed
+# normality test of T2
+shapiro.test(filter(rs.ratio.df, rs.ratio.df$Treatment_group == "T2")$Ratio)
+  # p-value = 0.3189 > 0.05 --> normally distributed
+# normality test of T3
+shapiro.test(filter(rs.ratio.df, rs.ratio.df$Treatment_group == "T3")$Ratio)
+  # p-value = 0.02109 < 0.05 --> not normally distributed
+# Hence, data not normally distributed.
+
+# # Heteroscedasticity test
+leveneTest(rs.ratio.df$Ratio ~ rs.ratio.df$Treatment_group, rs.ratio.df)
+  # p-value = 0.5761 > 0.05 --> homoscedastic
+
+# Not normally distributed and homoscedastic : Kruskal-Wallis test
+kruskal.test(rs.ratio.df$Ratio ~ rs.ratio.df$Treatment_group, rs.ratio.df)
+  # p-value = 0.07956 > 0.05 -> The difference in root-shoot ration between treatments is not significant.
+
+# power analysis
+pwr.anova.test(9, 9, 0.17, 0.05, power= )
+  # power = 0.1364
+```
+
+## Effect on Inflorescence Characteristics
+# Effect on length of inflorescence
+```{r}
+infl.length <- readxl::read_xlsx("DSonia_Flowers.xlsx")
+infl.length <- infl.length[1:2]
+colnames(infl.length) <- c("Treatment_group", "Inflorescence_length") 
+
+T0 <- infl.length[grep("t0", infl.length$Treatment_group),]
+T0 <- T0[2]
+T0_rownames <- character()
+for (i in 1:4){
+  out <- "T0"
+  T0_rownames <- c(T0_rownames, out)
+} 
+T0 <- cbind(T0_rownames, T0)
+colnames(T0) <- c("Treatment_group", "Inflorescence_length")
+
+T1 <- infl.length[grep("t1", infl.length$Treatment_group),]
+T1 <- T1[2]
+T1_rownames <- character()
+for (i in 1:1){
+  out <- "T1"
+  T1_rownames <- c(T1_rownames, out)
+} 
+T1 <- cbind(T1_rownames, T1)
+colnames(T1) <- c("Treatment_group", "Inflorescence_length")
+
+
+T2 <- infl.length[grep("t2", infl.length$Treatment_group),]
+T2 <- T2[2]
+T2_rownames <- character()
+for (i in 1:2){
+  out <- "T2"
+  T2_rownames <- c(T2_rownames, out)
+} 
+T2 <- cbind(T2_rownames, T2)
+colnames(T2) <- c("Treatment_group", "Inflorescence_length")
+
+
+T3 <- infl.length[grep("t3", infl.length$Treatment_group),]
+T3 <- T3[2]
+T3_rownames <- character()
+for (i in 1:3){
+  out <- "T3"
+  T3_rownames <- c(T3_rownames, out)
+} 
+T3 <- cbind(T3_rownames, T3)
+colnames(T3) <- c("Treatment_group", "Inflorescence_length")
+
+T4 <- infl.length[grep("t4", infl.length$Treatment_group),]
+T4 <- T4[2]
+T4_rownames <- character()
+for (i in 1:2){
+  out <- "T4"
+  T4_rownames <- c(T4_rownames, out)
+} 
+T4 <- cbind(T4_rownames, T4)
+colnames(T4) <- c("Treatment_group", "Inflorescence_length")
+
+
+T5 <- infl.length[grep("t5", infl.length$Treatment_group),]
+T5 <- T5[2]
+T5_rownames <- character()
+for (i in 1:3){
+  out <- "T5"
+  T5_rownames <- c(T5_rownames, out)
+} 
+T5 <- cbind(T5_rownames, T5)
+colnames(T5) <- c("Treatment_group", "Inflorescence_length")
+
+
+T6 <- infl.length[grep("t6", infl.length$Treatment_group),]
+T6 <- T6[2]
+T6_rownames <- character()
+for (i in 1:1){
+  out <- "T6"
+  T6_rownames <- c(T6_rownames, out)
+} 
+T6 <- cbind(T6_rownames, T6)
+colnames(T6) <- c("Treatment_group", "Inflorescence_length")
+
+
+T7 <- infl.length[grep("t7", infl.length$Treatment_group),]
+T7 <- T7[2]
+T7_rownames <- character()
+for (i in 1:1){
+  out <- "T7"
+  T7_rownames <- c(T7_rownames, out)
+} 
+T7 <- cbind(T7_rownames, T7)
+colnames(T7) <- c("Treatment_group", "Inflorescence_length")
+
+T8 <- infl.length[grep("t8", infl.length$Treatment_group),]
+T8 <- T8[2]
+T8_rownames <- character()
+for (i in 1:2){
+  out <- "T8"
+  T8_rownames <- c(T8_rownames, out)
+} 
+T8 <- cbind(T8_rownames, T8)
+colnames(T8) <- c("Treatment_group", "Inflorescence_length")
+
+infl.length.df <- rbind(T0, T1, T2, T3, T4, T5, T6, T7, T8)
+infl.length.df
+
+# Visualizing data
+jpeg("infl_length.jpg")
+ggplot(infl.length.df, aes(x=Treatment_group, y= Inflorescence_length)) + 
+  geom_boxplot(color = "black", fill = '#A4A4A4') +
+  stat_summary(fun.y=mean, geom="point", color = "red") +
+  ggtitle("Length of Inflorescence in each Treatment Group") + 
+                                  labs(y= "Length (m)", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+# Summary of descriptive stat of data
+  #T0
+summary(infl.length.df[grep("T0", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T0", infl.length.df$Treatment_group), 2])
+#T1
+summary(infl.length.df[grep("T1", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T1", infl.length.df$Treatment_group), 2])
+#T2
+summary(infl.length.df[grep("T2", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T2", infl.length.df$Treatment_group), 2])
+#T3
+summary(infl.length.df[grep("T3", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T3", infl.length.df$Treatment_group), 2])
+#T4
+summary(infl.length.df[grep("T4", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T4", infl.length.df$Treatment_group), 2])
+#T5
+summary(infl.length.df[grep("T5", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T5", infl.length.df$Treatment_group), 2])
+#T6
+summary(infl.length.df[grep("T6", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T6", infl.length.df$Treatment_group), 2])
+#T7
+summary(infl.length.df[grep("T7", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T7", infl.length.df$Treatment_group), 2])
+#T8
+summary(infl.length.df[grep("T8", infl.length.df$Treatment_group), 2])
+sd(infl.length.df[grep("T8", infl.length.df$Treatment_group), 2])
+
+# Statistical Analysis
+
+# test for normality
+# T0
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T0")$Inflorescence_length)
+  # p-value p-value = 0.7706 > 0.05 --> normally distributed
+# normality test of T1
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T1")$Inflorescence_length)
+  #  sample size of T1 is only 2
+# normality test of T2
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T2")$Inflorescence_length)
+ #  sample size of T2 is only 2
+# normality test of T3
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T3")$Inflorescence_length)
+  # p-value = 0.2257 > 0.05 --> normally distributed
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T4")$Inflorescence_length)
+  # sample size only 2
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T5")$Inflorescence_length)
+  # p-value = 0.4552 > 0.05 --> normally distributed
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T6")$Inflorescence_length)
+  # sample size not greater 3
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T7")$Inflorescence_length)
+  # sample size not greater 3
+shapiro.test(filter(infl.length.df, infl.length.df$Treatment_group == "T8")$Inflorescence_length)
+  # sample size not greater 3
+# Hence, we cannot determinet he normality of the data
+
+# # Heteroscedasticity test
+leveneTest(infl.length.df$Inflorescence_length ~ infl.length.df$Treatment_group, infl.length.df)
+  # p-value = 0.4135 > 0.05 --> homoscedastic
+
+# Data is homoscedastic, Assuming data is normal : ANOVA 
+  # we can still perform ANOVA even if sample size of all groups are not the same.
+summary(aov(infl.length.df$Inflorescence_length ~ infl.length.df$Treatment_group, infl.length.df))
+  # p-value = 0.719 > 0.05 -> The difference in length of inflorescence between treatments is not significant. Treatments do not affect length of inflorescence.
+
+# power analysis
+pwr.anova.test(9, 2, 0.34, 0.05, power= )
+  # power = 0.09040956
+```
+#Effect on number of flowers
+```{r}
+no.flowers <- readxl::read_xlsx("DSonia_Flowers.xlsx")
+no.flowers <- no.flowers[c(1, 3)]
+colnames(no.flowers) <- c("Treatment_group", "No._of_Flowers") 
+
+T0 <- no.flowers[grep("t0", no.flowers$Treatment_group),]
+T0 <- T0[2]
+T0_rownames <- character()
+for (i in 1:4){
+  out <- "T0"
+  T0_rownames <- c(T0_rownames, out)
+} 
+T0 <- cbind(T0_rownames, T0)
+colnames(T0) <- c("Treatment_group", "No._of_Flowers")
+
+T1 <- no.flowers[grep("t1", no.flowers$Treatment_group),]
+T1 <- T1[2]
+T1_rownames <- character()
+for (i in 1:1){
+  out <- "T1"
+  T1_rownames <- c(T1_rownames, out)
+} 
+T1 <- cbind(T1_rownames, T1)
+colnames(T1) <- c("Treatment_group", "No._of_Flowers")
+
+
+T2 <- no.flowers[grep("t2", no.flowers$Treatment_group),]
+T2 <- T2[2]
+T2_rownames <- character()
+for (i in 1:2){
+  out <- "T2"
+  T2_rownames <- c(T2_rownames, out)
+} 
+T2 <- cbind(T2_rownames, T2)
+colnames(T2) <- c("Treatment_group", "No._of_Flowers")
+
+
+T3 <- no.flowers[grep("t3", no.flowers$Treatment_group),]
+T3 <- T3[2]
+T3_rownames <- character()
+for (i in 1:3){
+  out <- "T3"
+  T3_rownames <- c(T3_rownames, out)
+} 
+T3 <- cbind(T3_rownames, T3)
+colnames(T3) <- c("Treatment_group", "No._of_Flowers")
+
+T4 <- no.flowers[grep("t4", no.flowers$Treatment_group),]
+T4 <- T4[2]
+T4_rownames <- character()
+for (i in 1:2){
+  out <- "T4"
+  T4_rownames <- c(T4_rownames, out)
+} 
+T4 <- cbind(T4_rownames, T4)
+colnames(T4) <- c("Treatment_group", "No._of_Flowers")
+
+
+T5 <- no.flowers[grep("t5", no.flowers$Treatment_group),]
+T5 <- T5[2]
+T5_rownames <- character()
+for (i in 1:3){
+  out <- "T5"
+  T5_rownames <- c(T5_rownames, out)
+} 
+T5 <- cbind(T5_rownames, T5)
+colnames(T5) <- c("Treatment_group", "No._of_Flowers")
+
+
+T6 <- no.flowers[grep("t6", no.flowers$Treatment_group),]
+T6 <- T6[2]
+T6_rownames <- character()
+for (i in 1:1){
+  out <- "T6"
+  T6_rownames <- c(T6_rownames, out)
+} 
+T6 <- cbind(T6_rownames, T6)
+colnames(T6) <- c("Treatment_group", "No._of_Flowers")
+
+
+T7 <- no.flowers[grep("t7", no.flowers$Treatment_group),]
+T7 <- T7[2]
+T7_rownames <- character()
+for (i in 1:1){
+  out <- "T7"
+  T7_rownames <- c(T7_rownames, out)
+} 
+T7 <- cbind(T7_rownames, T7)
+colnames(T7) <- c("Treatment_group", "No._of_Flowers")
+
+T8 <- no.flowers[grep("t8", no.flowers$Treatment_group),]
+T8 <- T8[2]
+T8_rownames <- character()
+for (i in 1:2){
+  out <- "T8"
+  T8_rownames <- c(T8_rownames, out)
+} 
+T8 <- cbind(T8_rownames, T8)
+colnames(T8) <- c("Treatment_group", "No._of_Flowers")
+
+no.flowers.df <- rbind(T0, T1, T2, T3, T4, T5, T6, T7, T8)
+no.flowers.df
+
+# Visualizing data
+jpeg("flower_no.jpg")
+ggplot(no.flowers.df, aes(x=Treatment_group, y= No._of_Flowers)) + 
+  geom_boxplot(color = "black", fill = '#A4A4A4') +
+  stat_summary(fun.y=mean, geom="point", color = "red") +
+  ggtitle("Number of Flowers in each Treatment Group") + 
+                                  labs(y= "No. of Flowers", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+dev.off()
+
+# Summary of descriptive stat of data
+  #T0
+summary(no.flowers.df[grep("T0", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T0", no.flowers.df$Treatment_group), 2])
+#T1
+summary(no.flowers.df[grep("T1", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T1", no.flowers.df$Treatment_group), 2])
+#T2
+summary(no.flowers.df[grep("T2", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T2", no.flowers.df$Treatment_group), 2])
+#T3
+summary(no.flowers.df[grep("T3", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T3", no.flowers.df$Treatment_group), 2])
+#T4
+summary(no.flowers.df[grep("T4", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T4", no.flowers.df$Treatment_group), 2])
+#T5
+summary(no.flowers.df[grep("T5", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T5", no.flowers.df$Treatment_group), 2])
+#T6
+summary(no.flowers.df[grep("T6", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T6", no.flowers.df$Treatment_group), 2])
+#T7
+summary(no.flowers.df[grep("T7", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T7", no.flowers.df$Treatment_group), 2])
+#T8
+summary(no.flowers.df[grep("T8", no.flowers.df$Treatment_group), 2])
+sd(no.flowers.df[grep("T8", no.flowers.df$Treatment_group), 2])
+
+# Statistical Analysis
+
+# test for normality
+# T0
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T0")$No._of_Flowers)
+  # p-value p-value = 0.3948 > 0.05 --> normally distributed
+# normality test of T1
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T1")$No._of_Flowers)
+  #  sample size of T1 is only 2
+# normality test of T2
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T2")$No._of_Flowers)
+ #  sample size of T2 is only 2
+# normality test of T3
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T3")$No._of_Flowers)
+  # p-value = 0.1736 > 0.05 --> normally distributed
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T4")$No._of_Flowers)
+  # sample size only 2
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T5")$No._of_Flowers)
+  # p-value = 2.2e-16 < 0.05 --> not normally distributed
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T6")$No._of_Flowers)
+  # sample size not greater 3
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T7")$No._of_Flowers)
+  # sample size not greater 3
+shapiro.test(filter(no.flowers.df, no.flowers.df$Treatment_group == "T8")$No._of_Flowers)
+  # sample size not greater 3
+# Hence, we cannot determine the normality of the data but probably not normally distributed since T5 not   #normally distributed
+
+# # Heteroscedasticity test
+leveneTest(no.flowers.df$No._of_Flowers ~ no.flowers.df$Treatment_group, no.flowers.df)
+  # p-value = 0.6339 > 0.05 --> homoscedastic
+
+# Data is homoscedastic, Assuming data is not normal : Kruskal-walis Test 
+kruskal.test(no.flowers.df$No._of_Flowers ~ no.flowers.df$Treatment_group, no.flowers.df)
+  # p-value = 0.4886 > 0.05 -> The difference in no. of flowers between treatments is not significant. Treatments do not affect no. of flowers.
+
+# power analysis
+pwr.anova.test(9, 2, 0.41, 0.05, power= )
+  # power = 0.1115
+```
+## Effect of treatments to number of axillary bud (new vegetative shoots)
+```{r}
+no.buds <- readxl::read_xlsx("DSonia_RateOfAsexualReproduction.xlsx")
+no.buds <- no.buds[1:2]
+colnames(no.buds) <- c("Treatment_group", "No._of_Axillary_Buds")
+
+#visualizing the data
+jpeg("buds.jpg")
+ggplot(no.buds, aes(Treatment_group, No._of_Axillary_Buds)) +
+  geom_bar(color = "black", fill = '#A4A4A4', stat = "identity") +
+  ggtitle("Number of Buds in each Treatment Group") + 
+                                  labs(y= "No. of Buds", x="Treatment Groups") + 
+                                        theme(legend.title = element_blank(), legend.position = "none",
+                                             text = element_text(size=15),
+                                             panel.grid.major = element_blank(),
+                                             panel.grid.minor = element_blank(),
+                                             panel.background = element_blank(),
+                                             axis.line = element_line("black"))
+
+dev.off()
+
+# Checking if no. of buds in each treatment groups are different
+  # perform chisquare
+chisq.test(no.buds$No._of_Axillary_Buds) 
+    # p-value = 0.8698 > 0.05 -> this means that there is no significant difference between the number of
+    # buds in each treatment group. Treatments do not affect the existence of buds. 
+```
